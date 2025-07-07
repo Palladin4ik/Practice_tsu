@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Color</title>
+
+    <style>
+        body {
+            padding: 20px;
+            margin: auto;
+        }
+
+        label {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+        }
+
+        #form {
+            width: 17%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        #square {
+            background-color: #000000;
+            width: 100px;
+            height: 100px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <div id="form">
+            <label>Ширина:
+                <input type="number" id="widthInput" placeholder="100">
+            </label>
+            <br>
+
+            <label>Высота:
+                <input type="number" id="heightInput" placeholder="100">
+            </label>
+            <br>
+
+            <button onclick="changeColor()">Случайный цвет</button>
+        </div>
+
+        <hr><br>
+
+        <div id="square" />
+    </main>
+
+    <script>
+        const widthInput = document.getElementById('widthInput');
+        const heightInput = document.getElementById('heightInput');
+        const square = document.getElementById('square');
+
+        function updateSquareSize() {
+            const width = widthInput.value || 100;
+            const height = heightInput.value || 100;
+            square.style.width = `${width}px`;
+            square.style.height = `${height}px`;
+        }
+
+        function changeColor() {
+            const r = Math.floor(Math.random() * 256);
+            const g = Math.floor(Math.random() * 256);
+            const b = Math.floor(Math.random() * 256);
+            const randomColor = `rgb(${r}, ${g}, ${b})`;
+            square.style.backgroundColor = randomColor;
+        }
+
+        widthInput.addEventListener('input', updateSquareSize);
+        heightInput.addEventListener('input', updateSquareSize);
+
+        updateSquareSize();
+    </script>
+</body>
+
+</html>
