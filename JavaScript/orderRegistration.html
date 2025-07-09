@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://api-maps.yandex.ru/2.1/?apikey=a3109fe7-1c18-4747-9fda-5a402a333920&lang=ru_RU" type="text/javascript"></script>
+    <title>Регистрация заказа</title>
+
+    <style>
+        textarea {
+            resize: none;
+        }
+        #map {
+            width: 100%;
+            height: 300px;
+        }
+        #orderForm {
+            margin: auto;
+            width: 30%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        #messages {
+            color: red;
+        }
+        #messages.success {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <form id="orderForm">
+        <input type="text" name="name" placeholder="ФИО">
+        <input type="tel" name="telephone" placeholder="Телефон">
+        <input type="text" name="email" placeholder="Email">
+        <div id="map"></div>
+        <textarea name="comment" rows="7" maxlength="500" placeholder="Комментарий к заказу (макс. 500 символов)"></textarea>
+
+        <button type="submit">Отправить</button>
+        <div id="messages"></div>
+    </form>
+
+    <script>
+        let myPlacemark;
+
+        ymaps.ready(init);
+        function init(){
+            const myMap = new ymaps.Map("map", {
+                center: [54.1961, 37.6182],
+                zoom: 15
+            }, {
+                searchControlProvider: 'yandex#search'
+            });
+
+            myMap.events.add('click', function(e){
+                const coords = e.get('coords');
+                if (myPlacemark) {
+                    myPlacemark.geometry.setCoordinates(coords);
+                }
+                else {
+                    myPlacemark = createPlacemark(coords);
+                    myMap.geoObjects.add(myPlacemark);
+
+                    myPlacemark.events.add('dragend', function(){
+                        getAddress(myPlacemark.geometry.getCoordinates());
+                    });
+                }
+                getAddress(coords);
+            });
+
+            function createPlacemark(coords){
+                return new ymaps.Placemark(coords, {
+                    iconCaption: 'поиск...'
+                }, {
+                    preset: 'islands#violetDotIconWithCaption',
+                    draggable: true
+                });
+            }
+
+            function getAddress(coords){
+                myPlacemark.properties.set('iconCaption', 'поиск...');
+                ymaps.geocode(coords).then(function(res){
+                    var firstGeoObject = res.geoObjects.get(0);
+                    myPlacemark.properties.set({
+                        iconCaption: firstGeoObject.getAddressLine(),
+                        balloonContent: [
+                            firstGeoObject.getAddressLine(),
+                            ' Координаты точки: ',
+                            [
+                                coords[0].toPrecision(5),
+                                coords[1].toPrecision(5)
+                            ].join(', ')
+                        ].join(' ')
+                    });
+                });
+            }
+        }
+
+        const form = document.getElementById("orderForm");
+        const messages = document.getElementById('messages');
+
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            let errors = [];
+
+            const formData = new FormData(form);
+
+            const name = formData.get('name');
+            const telephone = formData.get('telephone');
+            const email = formData.get('email');
+
+            if (!name.trim()){
+                errors.push('Не заполнено поле "ФИО"');
+            };
+
+            if (!telephone){
+                errors.push('Не заполнено поле "Телефон"');
+            } else if (isNaN(telephone)){
+                errors.push('Номер телефона должен состоять только из цифр');
+            }
+
+            const emailPattern = /^\w+@[a-zA-Z_]+?\.[a-zA-Z]{2,3}$/;
+            if (!emailPattern.test(email)){
+                errors.push('Поле "Email" заполнено некорректно');
+            }
+
+            if (!myPlacemark){
+                errors.push('Не отмечен адрес доставки');
+            }
+
+            if (errors.length > 0){
+                messages.innerHTML = errors.join('<br>');
+                messages.classList.remove('success');
+            } else{
+                messages.textContent = 'Заказ оформлен!';
+                messages.classList.add('success');
+            }
+        })
+    </script>
+</body>
+</html>
