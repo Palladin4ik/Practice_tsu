@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Загруженность процессора</title>
+
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #cpu-chart {
+            max-height: 600px;
+            width: 100%;
+        }
+        #stats {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="cpu-chart"></canvas>
+    <div id="stats">Число запросов: 0; Процент ошибок: 0%</div>
+
+    <script>
+        const ctx = document.getElementById('cpu-chart');
+
+        const cpuChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    labels: 'Загруженность процессора (%)',
+                    data: [],
+                    borderColor: 'skyblue'
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: { display: true, text: 'Загруженность процессора (%)' }
+                    },
+                    x: {
+                        title: { display: true, text: 'Время' }
+                    }
+                }
+            }
+        });
+
+        let totalRequests = 0;
+        let errorCount = 0;
+        let lastValidLoad = 0;
+
+        // В связи с той же проблемой, что и впредыдущей задаче
+        // (отсутствие доступа к серверу, политика CORS)
+        // вместо функции с запросом fetch, сделана функция,
+        // которая симулирует ответ, возвращаемый сервером
+        function simulateCpuLoad() {
+            totalRequests++;
+            if (Math.random() <= 0.05) {
+                errorCount++;
+                return 0;
+            }
+            return Math.floor(Math.random() * 101);
+        }
+
+        function updateChart() {
+            const load = simulateCpuLoad();
+            const currentLoad = load != 0 ? load : lastValidLoad;
+            if (load != 0) {
+                lastValidLoad = load;
+            }
+
+            const now = new Date().toLocaleTimeString();
+            cpuChart.data.labels.push(now);
+            cpuChart.data.datasets[0].data.push(currentLoad);
+
+            if (cpuChart.data.labels.length > 20) {
+                cpuChart.data.labels.shift();
+                cpuChart.data.datasets[0].data.shift();
+            }
+
+            cpuChart.update();
+
+            const errorRate = errorCount > 0 ? ((errorCount / totalRequests) * 100).toFixed(2) : 0;
+            document.getElementById('stats').textContent = `Число запросов: ${totalRequests}; Процент ошибок: ${errorRate}%`;
+        }
+
+        setInterval(updateChart, 5000);
+        updateChart();
+    </script>
+</body>
+</html>
