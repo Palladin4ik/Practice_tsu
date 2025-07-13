@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Электронная таблица</title>
+
+    <style>
+        body {
+            margin: 20px;
+        }
+        table {
+            border-collapse: collapse;
+        }
+        td {
+            border: 1px solid black;
+            padding: 5px;
+            text-align: center;
+            width: 100px;
+            height: 30px;
+        }
+        input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            align-items: center;
+        }
+        .row-buttons {
+            display: flex;
+            flex-direction: column;
+            margin-left: 10px;
+            gap: 5px;
+        }
+        .col-buttons {
+            margin-top: 10px;
+            justify-self: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div>
+            <table id="spreadsheet"></table>
+            <div class="col-buttons">
+                <button id="add-column">+</button>
+                <button id="del-column">-</button>
+            </div>
+        </div>
+        <div class="row-buttons">
+            <button id="add-row">+</button>
+            <button id="del-row">-</button>
+        </div>
+    </div>
+
+    <script>
+        let data = JSON.parse(localStorage.getItem('spreadsheetData')) || {
+            rows: 3,
+            cols: 3,
+            cells: {}
+        };
+
+        function saveData() {
+            localStorage.setItem('spreadsheetData', JSON.stringify(data));
+        }
+
+        function renderTable() {
+            const table = document.getElementById('spreadsheet');
+            table.innerHTML = '';
+            for (let row = 0; row < data.rows; row++){
+                const tr = document.createElement('tr');
+                for (let col = 0; col < data.cols; col++){
+                    const td = document.createElement('td');
+                    const cellKey = `${row}-${col}`;
+                    const cellValue = data.cells[cellKey] || '';
+                    td.dataset.cell = cellKey;
+                    td.textContent = cellValue;
+                    tr.appendChild(td);
+                }
+                table.appendChild(tr);
+            }
+        }
+
+        document.getElementById('spreadsheet').addEventListener('dblclick', function(e) {
+            if (e.target.tagName !== 'TD') return;
+            const cell = e.target;
+            const cellKey = cell.dataset.cell;
+            const currentValue = cell.textContent;
+            cell.innerHTML = `<input type="text" value="${currentValue}">`;
+            const input = cell.querySelector('input');
+            input.focus();
+
+            input.addEventListener('blur', saveCell);
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') saveCell();
+            });
+
+            function saveCell() {
+                const newValue = input.value;
+                cell.textContent = newValue;
+                if (newValue) {
+                    data.cells[cellKey] = newValue;
+                } else {
+                    delete data.cells[cellKey];
+                }
+                saveData();
+            }
+        });
+
+        function hasDataInRow(row) {
+            for (let col = 0; col < data.cols; col++) {
+                if (data.cells[`${row}-${col}`]) return true;
+            }
+            return false;
+        }
+
+        function hasDataInCol(col) {
+            for (let row = 0; row < data.rows; row++) {
+                if (data.cells[`${row}-${col}`]) return true;
+            }
+            return false;
+        }
+
+        document.getElementById('add-row').addEventListener('click', function() {
+            data.rows++;
+            renderTable();
+            saveData();
+        });
+
+        document.getElementById('del-row').addEventListener('click', function() {
+            if (data.rows <= 1) return;
+            const lastRow = data.rows - 1;
+            if (hasDataInRow(lastRow) && !confirm('Удалить строку вместе с данными?')) return;
+            for (let col = 0; col < data.cols; col++) {
+                delete data.cells[`${lastRow}-${col}`];
+            }
+            data.rows--;
+            renderTable();
+            saveData();
+        });
+
+        document.getElementById('add-column').addEventListener('click', function() {
+            data.cols++;
+            renderTable();
+            saveData();
+        });
+
+        document.getElementById('del-column').addEventListener('click', function() {
+            if (data.cols <= 1) return;
+            const lastCol = data.cols - 1;
+            if (hasDataInCol(lastCol) && !confirm('Удалить столец вместе с данными?')) return;
+            for (let row = 0; row < data.rows; row++) {
+                delete data.cells[`${row}-${lastCol}`];
+            }
+            data.cols--;
+            renderTable();
+            saveData();
+        });
+
+        renderTable();
+    </script>
+</body>
+</html>
