@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор доставки</title>
+
+    <style>
+        body {
+            margin: 20px;
+        }
+        .error {
+            color: red;
+        }
+        #deliveryForm {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 300px;
+        }
+        select, input, button {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <form id="deliveryForm">
+        <select id="city" name="city">
+            <option value="Москва" selected>Москва</option>
+        </select>
+        <input type="number" id="weight" name="weight" min="1" placeholder="Вес, кг" required>
+        <button type="submit">Рассчитать</button>
+    </form><br>
+    <div id="result"></div>
+
+    <script>
+        async function loadCities() {
+            try {
+                const response = await fetch('get_cities.php');
+                const cities = await response.json();
+                const citySelect = document.getElementById('city');
+                citySelect.innerHTML = '';
+
+                cities.forEach(city => {
+                    const option = document.createElement('option');
+                    option.value = city;
+                    option.textContent = city;
+
+                    if (city === 'Москва') option.selected = true;
+                    citySelect.appendChild(option);
+                });
+            } catch (error) {
+                console.log('Ошибка загрузки списка городов:', error);
+            }
+        }
+
+        document.getElementById('deliveryForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const city = document.getElementById('city').value;
+            const weight = document.getElementById('weight').value;
+            const resultDiv = document.getElementById('result');
+
+            try {
+                const response = await fetch('calculate_delivery.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `city=${encodeURIComponent(city)}&weight=${encodeURIComponent(weight)}`
+                });
+                const result = await response.json();
+
+                if (result.status === 'OK'){
+                    resultDiv.className = 'result'
+                    resultDiv.textContent = result.message;
+                } else {
+                    resultDiv.className = 'error';
+                    resultDiv.textContent = result.message;
+                }
+            } catch (error) {
+                resultDiv.className = 'error';
+                resultDiv.textContent = 'Ошибка при выполнении запроса';
+            }
+        })
+
+        loadCities();
+    </script>
+</body>
+</html>
