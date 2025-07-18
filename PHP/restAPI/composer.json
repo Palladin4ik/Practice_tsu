@@ -1,0 +1,12 @@
+{
+    "name": "user/products-api",
+    "require": {
+        "slim/slim": "^4.12",
+        "slim/psr7": "^1.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    }
+}
